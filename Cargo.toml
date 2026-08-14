@@ -9,6 +9,7 @@ axum = "0.8.9"
 chrono = { version = "0.4.45", features = ["serde"] }
 config = "0.15.25"
 dotenvy = "0.15.7"
+headers = "0.4.1"
 jsonwebtoken = { version = "11.0.0", features = ["rust_crypto"] }
 serde = { version = "1.0.229", features = ["derive"] }
 thiserror = "2.0.20"

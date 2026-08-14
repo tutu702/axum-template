@@ -1,24 +1,21 @@
-use axum::Json;
-use serde::{Deserialize, Serialize};
+use axum::{Json, extract::State};
 
 use crate::{
     errors::{AppError, Result},
     handler::auth_handler::generate_token,
-    models::JsonRes,
+    models::{JsonRes, LoginReq, LoginRes},
+    state::AppState,
 };
 
-#[derive(Debug, Deserialize, Serialize)]
-pub struct LoginReq {
-    username: String,
-    password: String,
-}
-
-pub async fn login(Json(req): Json<LoginReq>) -> Result<JsonRes<String>> {
-    if !((req.username == "admin") && (req.password == "123456")) {
-        return Err(AppError::Message("username or password error".into()));
+pub async fn login(
+    State(state): State<AppState>,
+    Json(req): Json<LoginReq>,
+) -> Result<JsonRes<LoginRes>> {
+    let cfg = state.config;
+    if req.username != cfg.auth.username || req.password != cfg.auth.password {
+        return Err(AppError::Message("Invalid username or password".into()));
     }
 
-    let token = generate_token(&req.username, "axum-teamplate", 30)?;
-
-    Ok(JsonRes::new(200, true, "ok", Some(token)))
+    let token = generate_token(&req.username, &cfg)?;
+    Ok(JsonRes::success_with_data(LoginRes { token }))
 }

@@ -12,7 +12,7 @@ pub type Result<T> = std::result::Result<T, AppError>;
 #[derive(Debug, Error)]
 pub enum AppError {
     #[error(transparent)]
-    AuthError(#[from] AuthError),
+    Auth(#[from] AuthError),
     #[error("{0}")]
     Message(String),
 }
@@ -21,43 +21,42 @@ pub enum AppError {
 pub enum AuthError {
     #[error("Missing token")]
     MissingToken,
-    #[error("Token creation error")]
-    TokenCration(String),
+    #[error("Token creation error: {0}")]
+    TokenCreation(String),
     #[error("Token has expired")]
     TokenExpired,
-    #[error("Invalid token")]
+    #[error("Invalid token: {0}")]
     InvalidToken(String),
     #[error("Token expiration calculation overflowed")]
     TokenExpirationOverflow,
 }
 
+impl AuthError {
+    /// HTTP status code that this auth error should surface as.
+    const fn status(&self) -> StatusCode {
+        match self {
+            Self::MissingToken | Self::TokenExpired | Self::InvalidToken(_) => {
+                StatusCode::UNAUTHORIZED
+            }
+            Self::TokenCreation(_) | Self::TokenExpirationOverflow => {
+                StatusCode::INTERNAL_SERVER_ERROR
+            }
+        }
+    }
+}
+
 impl IntoResponse for AppError {
     fn into_response(self) -> Response {
-        let (status, msg) = match &self {
-            // AuthError 子错误
-            AppError::AuthError(AuthError::MissingToken) => {
-                (StatusCode::UNAUTHORIZED, "missing token".to_string())
-            }
-            AppError::AuthError(AuthError::TokenExpired) => {
-                (StatusCode::UNAUTHORIZED, "token has expired".to_string())
-            }
-            AppError::AuthError(AuthError::InvalidToken(_)) => {
-                (StatusCode::UNAUTHORIZED, "invalid token".to_string())
-            }
-            AppError::AuthError(AuthError::TokenCration(e)) => (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                format!("token creation error: {e}"),
+        let (status, body) = match &self {
+            AppError::Auth(err) => (
+                err.status(),
+                JsonRes::fail(err.status().as_u16() as i32, err.to_string()),
             ),
-            AppError::AuthError(AuthError::TokenExpirationOverflow) => (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                "token expiration overflow".to_string(),
+            AppError::Message(msg) => (
+                StatusCode::BAD_REQUEST,
+                JsonRes::fail(StatusCode::BAD_REQUEST.as_u16() as i32, msg.clone()),
             ),
-
-            // 通用业务消息
-            AppError::Message(m) => (StatusCode::BAD_REQUEST, m.clone()),
         };
-
-        let body = JsonRes::new(status.as_u16() as i32, false, msg, None::<()>);
         (status, Json(body)).into_response()
     }
 }

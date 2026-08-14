@@ -3,13 +3,13 @@ use config::{Config, Environment, File, FileFormat};
 use serde::Deserialize;
 
 /// Application configuration root.
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Default, Deserialize)]
+#[serde(default)]
 pub struct AppConfig {
-    #[serde(default)]
     pub server: Server,
+    pub auth: AuthConfig,
 }
 
-/// Server configuration.
 #[derive(Debug, Clone, Deserialize)]
 pub struct Server {
     pub host: String,
@@ -19,8 +19,28 @@ pub struct Server {
 impl Default for Server {
     fn default() -> Self {
         Self {
-            host: "0.0.0.0".to_owned(),
+            host: "0.0.0.0".into(),
             port: 3000,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct AuthConfig {
+    pub username: String,
+    pub password: String,
+    pub secret: String,
+    #[serde(rename = "expireMinutes")]
+    pub expire_minutes: i64,
+}
+
+impl Default for AuthConfig {
+    fn default() -> Self {
+        Self {
+            username: "admin".into(),
+            password: "123456".into(),
+            secret: "axum-template".into(),
+            expire_minutes: 30,
         }
     }
 }
