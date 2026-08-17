@@ -1,4 +1,5 @@
 mod config;
+mod database;
 mod errors;
 pub mod handler;
 pub mod models;
@@ -6,7 +7,8 @@ pub mod routes;
 mod state;
 
 use anyhow::{Context, Result};
-pub use config::AppConfig;
+pub use config::{AppConfig, DatabaseConfig, DatabaseDriver};
+pub use database::{DbPool, init_pool};
 use tokio::net::TcpListener;
 use tracing_subscriber::{EnvFilter, fmt, layer::SubscriberExt, util::SubscriberInitExt};
 
@@ -20,7 +22,8 @@ pub async fn serve(config: AppConfig) -> Result<()> {
         .await
         .with_context(|| format!("failed to bind to {addr}"))?;
 
-    let state = AppState::new(config);
+    let db = init_pool(&config.database).await?;
+    let state = AppState::new(config, db);
     let app = init_routes(state);
 
     tracing::info!("listening on {addr}");

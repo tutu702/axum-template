@@ -8,6 +8,7 @@ use serde::Deserialize;
 pub struct AppConfig {
     pub server: Server,
     pub auth: AuthConfig,
+    pub database: DatabaseConfig,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -41,6 +42,51 @@ impl Default for AuthConfig {
             password: "123456".into(),
             secret: "axum-template".into(),
             expire_minutes: 30,
+        }
+    }
+}
+
+/// Database backend selection.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
+pub enum DatabaseDriver {
+    #[serde(rename = "sqlite3")]
+    Sqlite,
+    #[serde(rename = "pgsql")]
+    Postgresql,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct DatabaseConfig {
+    pub driver: DatabaseDriver,
+    pub url: String,
+    #[serde(rename = "maxConnections", default = "default_max_connections")]
+    pub max_connections: u32,
+    #[serde(rename = "minConnections", default = "default_min_connections")]
+    pub min_connections: u32,
+    #[serde(rename = "acquireTimeout", default = "default_acquire_timeout")]
+    pub acquire_timeout: u64,
+}
+
+const fn default_max_connections() -> u32 {
+    10
+}
+
+const fn default_min_connections() -> u32 {
+    1
+}
+
+const fn default_acquire_timeout() -> u64 {
+    30
+}
+
+impl Default for DatabaseConfig {
+    fn default() -> Self {
+        Self {
+            driver: DatabaseDriver::Sqlite,
+            url: "sqlite://./data/app.db".into(),
+            max_connections: default_max_connections(),
+            min_connections: default_min_connections(),
+            acquire_timeout: default_acquire_timeout(),
         }
     }
 }
