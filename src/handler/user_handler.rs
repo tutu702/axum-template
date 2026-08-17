@@ -2,8 +2,8 @@ use axum::{Json, extract::State};
 
 use crate::{
     errors::{AppError, Result},
-    handler::auth_handler::generate_token,
-    models::{JsonRes, LoginReq, LoginRes},
+    handler::auth_handler::{AuthUser, generate_token},
+    models::{JsonRes, LoginReq, LoginRes, ProfileRes},
     state::AppState,
 };
 
@@ -18,4 +18,10 @@ pub async fn login(
 
     let token = generate_token(&req.username, &cfg)?;
     Ok(JsonRes::success_with_data(LoginRes { token }))
+}
+
+pub async fn get_profile(user: AuthUser) -> Result<JsonRes<ProfileRes>> {
+    Ok(JsonRes::success_with_data(ProfileRes {
+        username: user.username,
+    }))
 }

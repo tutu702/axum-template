@@ -7,14 +7,15 @@ use tower_http::trace::{DefaultMakeSpan, DefaultOnRequest, DefaultOnResponse, Tr
 use tracing::Level;
 
 use crate::{
-    handler::{auth_handler::AuthUser, login},
+    handler::{auth_handler::AuthUser, get_profile, login},
     state::AppState,
 };
 
 pub fn init_routes(state: AppState) -> Router {
     // Routes that require a valid JWT.
-    let protected =
-        Router::new().route_layer(from_extractor_with_state::<AuthUser, _>(state.clone()));
+    let protected = Router::new()
+        .route("/profile", get(get_profile))
+        .route_layer(from_extractor_with_state::<AuthUser, _>(state.clone()));
 
     // Public routes (no auth).
     let public = Router::new().route("/login", post(login));

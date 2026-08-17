@@ -10,3 +10,8 @@ pub struct LoginReq {
 pub struct LoginRes {
     pub token: String,
 }
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct ProfileRes {
+    pub username: String,
+}
