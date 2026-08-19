@@ -28,8 +28,6 @@ impl Default for Server {
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct AuthConfig {
-    pub username: String,
-    pub password: String,
     pub secret: String,
     #[serde(rename = "expireMinutes")]
     pub expire_minutes: i64,
@@ -38,8 +36,6 @@ pub struct AuthConfig {
 impl Default for AuthConfig {
     fn default() -> Self {
         Self {
-            username: "admin".into(),
-            password: "123456".into(),
             secret: "axum-template".into(),
             expire_minutes: 30,
         }
